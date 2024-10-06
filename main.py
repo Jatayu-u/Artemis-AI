@@ -11,72 +11,72 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 # Set your API key for the language model
-api_key = "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"
+api_key = ""
 
 # Initialize FastAPI app
 app = FastAPI()
 
-# # Configuration class
-# class CFG:
-#     device = "cpu"  # Use CPU for inference
-#     seed = 42
-#     generator = torch.Generator(device).manual_seed(seed)  # Ensures reproducibility
-#     image_gen_steps = 35  # Number of diffusion steps for image generation
-#     image_gen_model_id = "stabilityai/stable-diffusion-2"  # Model ID from Hugging Face
-#     image_gen_size = (400, 400)  # Desired image size
-#     image_gen_guidance_scale = 9  # Strength of the guidance signal
+# Configuration class
+class CFG:
+    device = "cpu"  # Use CPU for inference
+    seed = 42
+    generator = torch.Generator(device).manual_seed(seed)  # Ensures reproducibility
+    image_gen_steps = 35  # Number of diffusion steps for image generation
+    image_gen_model_id = "stabilityai/stable-diffusion-2"  # Model ID from Hugging Face
+    image_gen_size = (400, 400)  # Desired image size
+    image_gen_guidance_scale = 9  # Strength of the guidance signal
 
 
-# # Access Hugging Face API token
-# secret_hf_token = "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"  # Replace with actual token
+# Access Hugging Face API token
+secret_hf_token = ""  # Replace with actual token
 
-# # Load the pre-trained Stable Diffusion model once on app startup
-# @app.on_event("startup")
-# async def load_image_model():
-#     global image_gen_model
-#     image_gen_model = StableDiffusionPipeline.from_pretrained(
-#         CFG.image_gen_model_id,
-#         torch_dtype=torch.float32,  # Use full precision for CPU
-#         use_auth_token=secret_hf_token,
-#     ).to(CFG.device)
-
-
-# # Define request model for image generation
-# class ImageGenerationRequest(BaseModel):
-#     prompt: str
+# Load the pre-trained Stable Diffusion model once on app startup
+@app.on_event("startup")
+async def load_image_model():
+    global image_gen_model
+    image_gen_model = StableDiffusionPipeline.from_pretrained(
+        CFG.image_gen_model_id,
+        torch_dtype=torch.float32,  # Use full precision for CPU
+        use_auth_token=secret_hf_token,
+    ).to(CFG.device)
 
 
-# # Image generation function
-# from fastapi.responses import StreamingResponse
-# from io import BytesIO
+# Define request model for image generation
+class ImageGenerationRequest(BaseModel):
+    prompt: str
 
-# # Image generation function
-# @app.post("/generate_image/")
-# async def generate_image(request: ImageGenerationRequest) -> StreamingResponse:
-#     prompt = request.prompt
-#     # Generate image based on the prompt
-#     image = image_gen_model(
-#         prompt,
-#         num_inference_steps=CFG.image_gen_steps,
-#         generator=CFG.generator,
-#         guidance_scale=CFG.image_gen_guidance_scale,
-#     ).images[0]
 
-#     # Resize the generated image to the desired size
-#     image = image.resize(CFG.image_gen_size)
+# Image generation function
+from fastapi.responses import StreamingResponse
+from io import BytesIO
 
-#     # Save image to a BytesIO stream
-#     img_byte_arr = BytesIO()
-#     image.save(img_byte_arr, format='PNG')
-#     img_byte_arr.seek(0)
+# Image generation function
+@app.post("/generate_image/")
+async def generate_image(request: ImageGenerationRequest) -> StreamingResponse:
+    prompt = request.prompt
+    # Generate image based on the prompt
+    image = image_gen_model(
+        prompt,
+        num_inference_steps=CFG.image_gen_steps,
+        generator=CFG.generator,
+        guidance_scale=CFG.image_gen_guidance_scale,
+    ).images[0]
 
-#     # Return the image as a streaming response
-#     return StreamingResponse(img_byte_arr, media_type="image/png")
+    # Resize the generated image to the desired size
+    image = image.resize(CFG.image_gen_size)
+
+    # Save image to a BytesIO stream
+    img_byte_arr = BytesIO()
+    image.save(img_byte_arr, format='PNG')
+    img_byte_arr.seek(0)
+
+    # Return the image as a streaming response
+    return StreamingResponse(img_byte_arr, media_type="image/png")
 
 
 
 # Set your API key
-api_key = "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"
+api_key = ""
 
 # Initialize the Groq client
 client = Groq(api_key=api_key)
